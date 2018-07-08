@@ -36,6 +36,11 @@ class _TodoListState extends State<TodoList> {
         ],
       ),
       body: _buildTodoList(),
+      floatingActionButton: FloatingActionButton(
+          onPressed: _addItem,
+          tooltip: 'new Item',
+          child: Icon(Icons.add),
+                                                )
     );
   }
 
