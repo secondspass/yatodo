@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(new MyApp());
 
@@ -22,8 +23,22 @@ class TodoList extends StatefulWidget {
 }
 
 class _TodoListState extends State<TodoList> {
-  final _listItems = <String>['item1', 'item2', 'item3'];
-  final _completed = <String>[];
+  List<String> _listItems = <String>[];
+  List<String> _completed = <String>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTodoList();
+  }
+
+  void _loadTodoList() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _listItems = (prefs.getStringList('todolist') ?? <String>[]);
+      _completed = (prefs.getStringList('completed') ?? <String>[]);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +87,7 @@ class _TodoListState extends State<TodoList> {
             } else {
               _completed.add(item);
             }
+            _syncToDisk();
           },
         );
       },
@@ -83,7 +99,14 @@ class _TodoListState extends State<TodoList> {
     setState(() {
       _listItems.clear();
       _completed.clear();
+      _syncToDisk();
     });
+  }
+
+  void _syncToDisk() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('todolist', _listItems);
+    prefs.setStringList('completed', _completed);
   }
 
   void _deleteItem(String item, bool alreadyDone) {
@@ -96,6 +119,7 @@ class _TodoListState extends State<TodoList> {
         if (alreadyDone) {
           _completed.remove(item);
         }
+        _syncToDisk();
       });
     };
   }
@@ -105,7 +129,8 @@ class _TodoListState extends State<TodoList> {
     Navigator.of(context).push(
       new MaterialPageRoute(
         builder: (context) {
-            final itemEntryField = new TextField(controller: new TextEditingController());
+          final itemEntryField =
+              new TextField(controller: new TextEditingController());
           final addButton = new RaisedButton(
               child: Text('ADD ITEM'),
               onPressed: () {
@@ -114,6 +139,7 @@ class _TodoListState extends State<TodoList> {
                   if ((itemText != '') || !_listItems.contains(itemText)) {
                     _listItems.add(itemText);
                     itemEntryField.controller.text = '';
+                    _syncToDisk();
                   }
                 });
               });
